@@ -1,0 +1,22 @@
+# Netlify configuration for the ReValue frontend (Vite + React, in frontend/).
+# This repo is a monorepo (frontend/ + backend/ + ml-service/); "base"
+# tells Netlify to run the build inside frontend/, so "publish" and
+# "command" below are relative to that directory.
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback so client-side routes (react-router-dom BrowserRouter)
+# resolve correctly on hard refresh / direct navigation to e.g. /dashboard.
+# (Also provided via frontend/public/_redirects, which Vite copies into
+# frontend/dist/ at build time -- kept as a redundant safety net.)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# NOTE: Set VITE_API_BASE_URL in Netlify's Site settings -> Environment
+# variables (e.g. https://revalue-backend.onrender.com/api). Vite only
+# reads env vars at build time, so trigger a redeploy after changing it.

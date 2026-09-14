@@ -1,0 +1,46 @@
+# Render Blueprint for ReValue (backend + ml-service).
+#
+# Optional: you can deploy both services at once via "New +" -> "Blueprint"
+# in the Render dashboard, pointing it at this repo. Manual dashboard setup
+# (one service at a time) works identically -- see README.md for that path.
+#
+# IMPORTANT: ML_SERVICE_URL and FRONTEND_URL below are placeholders.
+# Render assigns each service's *.onrender.com URL only after its first
+# deploy, so update these values in the Render dashboard (Environment tab)
+# once you know the real URLs, then redeploy. See "Deployment order" in
+# README.md.
+
+services:
+  # --------------------------------------------------
+  # ML inference service (FastAPI + ONNX Runtime)
+  # --------------------------------------------------
+  - type: web
+    name: revalue-ml-service
+    runtime: python
+    plan: free
+    rootDir: ml-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+
+  # --------------------------------------------------
+  # Backend API (Node.js + Express)
+  # --------------------------------------------------
+  - type: web
+    name: revalue-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ML_SERVICE_URL
+        value: https://revalue-ml-service.onrender.com
+      - key: FRONTEND_URL
+        value: https://your-site.netlify.app
