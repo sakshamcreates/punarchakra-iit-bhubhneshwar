@@ -1,217 +1,378 @@
-# ♻️ ReValue — AI-Powered Circular Economy Platform
+# ♻️ Punarchakra
 
-> **Turning discarded electronics into recovered value — Resale, Repair, Component Harvesting, or Recycling, decided by AI instead of guesswork.**
+**An AI-powered autonomous e-waste resolution agent.** It investigates a submitted device, chooses the highest-value valid outcome, executes the required backend action, independently verifies the resulting state, and replans on its own when the first plan fails.
+
+USER UPLOAD DEVICE → UNDERSTAND → DECIDE → ACT → VERIFY → REPLAN
+
+**Problem Statement 5 — Autonomous Customer Resolution Agent** · IIT Bhubaneswar Agentic AI Hackathon
+
+**GitHub:** https://github.com/sakshamcreates/punarchakra-iit-bhubhneshwar
+**Live Demo:** punarchakra.netlify.app
 
 ---
 
-## 📌 Executive Summary
+## In 30 Seconds
 
-India generates large and rapidly growing volumes of electronic waste, but very little of it is actually "recycled" in a value-conscious way — most of it is sold as undifferentiated scrap, priced by weight, regardless of whether the device inside is resellable, repairable, or genuinely at end-of-life. India already has the network to handle this at scale: a vast, decentralized system of local waste collectors (*kabadiwalas*) who touch nearly every discarded device at some point. What that network lacks isn't reach — it's information. There's no shared way to assess a device's condition, no visibility into its resale or component value, and no digital trail for anyone who needs one.
+```text
+Device owner submits item
+        ↓
+Agent understands the goal
+        ↓
+Retrieves case + customer + valuation + constraints
+        ↓
+Selects an executable resolution
+        ↓
+Executes a real backend mutation
+        ↓
+Reads the resulting state
+        ↓
+   Did reality match the plan?
+   ↓ YES              ↓ NO
+COMPLETE            REPLAN → alternative → VERIFY → COMPLETE / ESCALATE
+```
 
-**ReValue** is an AI-assisted platform that looks at a discarded electronic device and estimates which recovery path actually recovers the most value from it, instead of defaulting every device into the same scrap pipeline. It's built to sit on top of the existing kabadiwala network and give it — and the people selling into it — better information, not to replace it.
+> **Punarchakra does not merely predict a resolution. It closes the loop between decision, execution, observation, verification, and adaptation.**
 
 ---
 
-## 🌍 Problem
+## Judge Proof
 
-A phone with a cracked screen but a healthy battery, and a phone that's genuinely dead, both get sold the same way today: as scrap, by weight. Nobody in that chain — the person discarding the device, the local collector, or the eventual recycler — has a reliable, fast way to tell whether an item is worth reselling, repairing, or stripping for parts before it's dumped into undifferentiated scrap. Value that could have been recovered through resale or repair gets destroyed at the very first handoff, simply because nobody involved had the information to make a better routing decision in that moment.
+Everything below is implemented and demonstrable, not aspirational:
 
-## 🇮🇳 Why This Matters in India
+- ✅ Reads real case, customer, and valuation state before deciding anything
+- ✅ Evaluates constraints and per-route eligibility before a route is even considered
+- ✅ Selects an executable resolution from evidence — zero route-specific `if` branches
+- ✅ Executes a real backend mutation (listing / auction / pickup)
+- ✅ Detects execution failure from a structured tool result, not an exception
+- ✅ Updates its available action space (excludes the failed route)
+- ✅ Replans by re-running the **same** decision policy on the updated view
+- ✅ Executes the alternative route
+- ✅ Independently verifies the resulting state — sabotage-tested, doesn't trust the executor's own success flag
+- ✅ Escalates to "human review" only when no safe route remains, with full context preserved
 
-India's e-waste volumes are large and increasing, and the country's informal collection network is already doing the hard part — physically reaching almost every discarded device through kabadiwalas. The bottleneck isn't collection, it's decision-making at the point of collection: pricing and routing run on visual inspection and experience rather than any shared assessment of condition or value.
+---
 
-This is the gap **Problem Statement 5 (AI for Public Good)** of the official hackathon brief is aimed at: using AI to give underserved, income-constrained actors — here, informal waste workers and the micro-entrepreneurs around them — better information and market access, rather than building AI that only serves people who already have both. ReValue's target community fits the brief's own framing of workers "making high-impact decisions with limited resources and incomplete information."
+## What Makes This Autonomous
 
-## 💡 Solution
+A judge's real question is: *is this a classifier with a UI, or is it actually an agent?* The distinction:
 
-ReValue is not another classifieds listing app for scrap. It's an **AI-driven routing engine** that evaluates a discarded electronic device and dynamically points it toward its highest-value destination: **Resale, Repair, Component Harvesting, B2B Auction, or Certified Recycling.**
+| A classifier / predictor | Punarchakra |
+| Outputs a label or score | Selects an **executable action** from evidence |
+| Stops after the prediction | **Executes** the action against real backend state |
+| Never checks what happened | **Verifies** the resulting state independently |
+| Has no notion of failure | **Observes** structured failure and **replans** around it |
+| One-shot | **Closed-loop**: decide → act → observe → adapt → verify → complete/escalate |
 
-## ⚡ How ReValue Works — The Core Workflow
+Every session carries an explicit `goal` string and a 19-field case-state object (`agentStateService.createSession`) — not a chat transcript the system has to re-infer intent from.
 
+---
+
+## Where AI Fits
+
+The decision and replanning logic in Punarchakra is **deterministic by design** — this section explains exactly where AI is, and why the rest isn't.
+
+```text
+AI/ML Perception → Structured Evidence → Autonomous Control Layer → Tool Execution → Verification → Replanning
 ```
-[ Upload Asset ]
-        │
-        ▼
-[ AI Image Classification (MobileNetV3 Small → ONNX Runtime) ]
-        │
-        ▼
-[ Multi-Tier Valuation Engine ]
-   ├── 1. Direct Resale Value
-   ├── 2. Repair + Resale Margin
-   ├── 3. Component / Harvesting Value
-   └── 4. Material Scrap Value
-        │
-        ▼
-[ Optimal Route Decision ]
-   ├── Whole Device Resale (C2B / P2P)
-   ├── Component Harvesting (Local Repair Shops)
-   ├── Enterprise Bulk Auction (SMEs / Refurbishers)   — roadmap
-   └── Certified E-Waste Recycling                      — roadmap
-        │
-        ▼
-[ Local Logistics & Settlement (Kabadiwala Pickups + Escrow) ]  — roadmap
-```
 
-The core, working part of this pipeline today is the top half: photo → classification → valuation → routing recommendation. The bottom half — actually connecting that recommendation to a real pickup, bulk auction, or settlement — is where the project is headed next (see [Roadmap](#-roadmap)); it isn't live yet, and this README doesn't claim otherwise.
+| Stage | What it is | Nature |
+|---|---|---|
+| Device classification | MobileNetV3 Small via ONNX Runtime, in a FastAPI microservice | **AI/ML — probabilistic** |
+| Classification confidence | Output of the model above | Evidence |
+| Valuation | Expected-value estimate per candidate route | Decision evidence |
+| Constraint check | Rule-based eligibility per route | Evidence (eligibility) |
+| Route selection | `agentDecisionService.decide()` | **Deterministic controller** |
+| `execute_resolution` | Backend mutation | **State-changing action** |
+| `verify_resolution` | Independent state re-read | **Validation** |
+| Replanning | Excludes failed route, reruns `decide()` | **Adaptive closed-loop behavior** |
 
-## 🤖 AI/ML Layer
+> **AI produces evidence. The autonomous control layer turns that evidence into constrained, executable, verifiable actions.**
 
-This is the technically deepest part of the project, so it's worth being precise about what's actually running in production:
+No LLM performs reasoning or route selection anywhere in this pipeline. That's intentional: for a system that mutates real listing, auction, and pickup state, a deterministic and fully auditable decision layer is a safer engineering choice than an opaque model choosing which mutation to fire. The full breakdown is in [AI/ML Layer](#aiml-layer); the limitation is stated again, plainly, in [Implementation Scope & Limitations](#implementation-scope--limitations).
 
-- **Model:** MobileNetV3 Small, trained for device/scrap image classification.
-- **Inference runtime:** ONNX Runtime — the trained model is exported to ONNX and served through ONNX Runtime. Production inference does **not** run directly through PyTorch.
-- **Pipeline:** image upload → preprocessing → ONNX inference → top-k predictions with confidence scores.
-- **Output:** predicted device/scrap category and a confidence score, which feeds the valuation engine below it.
-- **Price prediction:** handled by a separate ML service downstream of classification — a targeted valuation model, not a generative/LLM component, feeding into the routing logic.
+---
 
-## 🌟 Key Features
+## PS5 Requirement → Implementation
 
-### 1. 🤖 AI-Based Asset Understanding
-- **Image classification:** upload a photo of the device; MobileNetV3 Small (via ONNX Runtime) identifies the device/scrap category with a confidence score.
-- **Condition-aware assessment:** classification output is used as the basis for value estimation, rather than treating every device identically.
-
-### 2. 📊 Multi-Tier Valuation
-Estimates value across multiple possible outcomes for the same device:
-
-$$\text{Best Value} = \max\Big(\text{Resale},\ (\text{Repaired Resale} - \text{Repair Cost}),\ \sum \text{Component Parts},\ \text{Scrap Material}\Big)$$
-
-The valuation model consumes the classification output to produce this estimate; repair-cost and component-level pricing depth is part of ongoing work rather than a fully mature, market-calibrated system yet.
-
-### 3. 🔄 Intelligent Asset Routing (Core Differentiator)
-Instead of pushing every device onto a single generic listing, ReValue recommends a route:
-- **Sell Whole** — high residual-value consumer devices.
-- **Repair First** — devices where a small repair meaningfully increases resale value.
-- **Sell as Parts** — broken devices with valuable functional components (SSDs, RAM, displays).
-- **B2B Bulk Auction** *(roadmap)* — SME/enterprise IT asset liquidation.
-- **Certified Recycling** *(roadmap)* — routing genuinely end-of-life devices to authorized recyclers.
-
-### 4. 🛵 Kabadiwala-Aligned Logistics *(in development)*
-- Designed to integrate existing local waste collectors into a digital flow rather than bypass them.
-- Planned: route-optimized pickup leads, transparent spot pricing, digital inventory tracking for collectors.
-
-### 5. 🏢 Enterprise & CSR Layer *(roadmap)*
-- **Asset Disposition (ITAD):** digital audit trail and chain-of-custody tracking for enterprise device disposal.
-- **CSR facilitation:** refurbish → certify → donate → reporting flow for corporate donation programs.
-- This layer is a future direction based on the platform's architecture, not a currently implemented feature.
-
-## 🎯 Problem Statement Alignment
-
-**Official challenge (Problem Statement 5 — AI for Public Good):** build an AI solution that improves an underserved community's access to information, decision-making, livelihoods, or economic opportunities, with attention to local languages, digital literacy, affordability, and limited connectivity.
-
-ReValue's target community is the informal waste-collection workforce (kabadiwalas) and the individuals who sell devices to them — a group that fits the brief's own examples of "micro-entrepreneurs" and workers making high-impact decisions with incomplete information.
-
-| Problem Statement Requirement | ReValue Response |
+| PS5 Requirement | Punarchakra |
 |---|---|
-| Serve an underserved/marginalized community with limited access to information | Targets kabadiwalas and device owners, who currently price devices by weight/guesswork rather than actual resale or repair value |
-| Improve decision-making under incomplete information | AI classification + value estimation gives a condition- and category-aware recommendation instead of a flat scrap price |
-| Improve livelihoods / economic opportunity | Routing toward resale/repair/component-harvesting recovers value that pure scrap pricing currently destroys, for the same collectors already doing the work |
-| Affordability / accessibility considerations | Photo-based input (no specialized hardware); designed to sit on top of existing informal collection workflows rather than replace them |
+| Understand customer goal | Explicit session `goal` + structured case state |
+| Retrieve customer / order / inventory / policy | `userRepository` join · listing (order) · repair-component availability (inventory) · `check_constraints` (policy) |
+| Select resolution | Constraint-aware expected-value decision, zero hardcoded route branching |
+| Execute action | Real listing mutation / auction creation / pickup creation |
+| Verify state change | Independent repository re-read, sabotage-tested |
+| Adapt when blocked | Observe failure → exclude route → replan → re-decide |
+| Escalate only when necessary | `HUMAN_REVIEW`, only on real review flags or zero viable routes |
 
-This mapping is intentionally narrow — ReValue is a value-routing tool for an underserved workforce, not a full public-services or welfare-access platform, and this README doesn't claim otherwise.
+## E-Waste Domain Mapping
 
-## 💼 Business Model & Financial Analysis
-
-> These figures are illustrative business-planning estimates prepared for hackathon pitch purposes — they are **not** measured outcomes from a live, revenue-generating deployment.
-
-### 🎯 Market Framing
-- **TAM:** India's secondary electronics resale, scrap, and refurbishment market as a whole.
-- **SAM:** Urban electronics hubs, repair-shop networks, and IT-heavy corporate clusters.
-- **SOM:** A single dense metro area as an initial launch geography.
-
-### 💰 Potential Revenue Streams
-1. **Marketplace take rate** — commission on completed transactions.
-2. **Auction & bidding fees** — enterprise asset liquidation and bulk scrap bidding (roadmap feature).
-3. **B2B SaaS subscriptions** — verified-repairer memberships and enterprise ITAD dashboards (roadmap feature).
-4. **Data & analytics API** — component/commodity price feeds (roadmap feature).
-
-### 📈 Illustrative Unit Economics
-| Metric | Assumption |
+| Enterprise Concept | Punarchakra Domain |
 |---|---|
-| Avg. recovered value / transaction | ₹5,000 |
-| Platform take rate | 10% (₹500) |
-| Variable cost / transaction | ₹200 (logistics, verification, support, payment gateway) |
-| Contribution margin | ₹300 (60%) |
-| Illustrative annual fixed cost | ~₹65 Lakhs |
-| Break-even target | ~21,700 transactions/year (~1,800/month) |
+| Customer | Device owner / seller |
+| Order / Case | E-waste listing |
+| Inventory | Repair-component availability |
+| Policy | Resolution constraints / business rules |
+| Resolution | Repair · resale (whole) · parts · auction · scrap pickup · donation |
+| State-changing action | Listing mutation / auction creation / pickup creation |
+| Verification | Independent backend state re-read |
+| Escalation | `HUMAN_REVIEW` |
 
-| Stage | Transactions (target) | Platform Revenue (target) |
-|---|:---:|:---:|
-| Pilot | 750 | ₹3.75 Lakhs |
-| City-scale | 10,000 | ₹50 Lakhs |
-| Multi-city | 30,000 | ₹1.5 Crore |
+We mapped the same agentic control problem onto e-waste resolution rather than relabeling arbitrary fields: investigate the case, reason over constraints, execute a permitted action, verify the resulting state, adapt when the environment changes. Where the domain has no honest equivalent of an enterprise concept (a multi-SKU warehouse, for example), that's stated in [Implementation Scope & Limitations](#implementation-scope--limitations), not simulated.
 
-These are planning assumptions, not achieved numbers — no transactions, revenue, or users have been reported yet.
+---
 
-## 🏗️ System Architecture
+## Agent State Machine
 
-```
-Frontend (React + Vite + Tailwind, PWA)
-        │
-        ▼
-Backend API (Node.js / Python)
-        │
-        ▼
-ML Service (MobileNetV3 Small → ONNX Runtime)
-        │
-        ▼
-PostgreSQL (data) + Redis (cache)
+```text
+IDLE → EVALUATING → CHECKING_CONSTRAINTS → DECIDING → EXECUTING → OBSERVING → VERIFYING → COMPLETED
+
+EXECUTING → (failure) → OBSERVING → REPLANNING → DECIDING
+
+CHECKING_CONSTRAINTS / DECIDING → (blocked / no viable route) → HUMAN_REVIEW
 ```
 
-## 🔄 End-to-End Workflow
+`agentOrchestrator.advanceSession()` is the single driver of every transition — there is no second code path that can move a session's status.
 
-1. User photographs a discarded device.
-2. Image is sent to the ML service for classification (device/scrap category + confidence).
-3. Backend combines classification output with valuation logic to estimate recovery value.
-4. System recommends a routing decision: resell, repair, harvest components, or recycle.
-5. *(Roadmap)* Recommendation is connected to an actual collector, buyer, or recycler for pickup/settlement.
+---
 
-## 👥 Stakeholders
+## Autonomous Resolution in Action
 
-- **Device owners** — individuals or small offices discarding electronics, currently underpaid because scrap pricing ignores resale/repair value.
-- **Kabadiwalas / local collectors** — the existing informal network ReValue is built to support with better information, not replace.
-- **Repair shops** — potential buyers of components or repairable units.
-- **Recyclers** — end destination for devices with no recoverable resale/repair value.
+A real, reproducible scenario (`SCENARIO_FAILURE_REPLAN`, item `item-demo-001`, a damaged "Motherboard-X1" PCB), driven end-to-end via `backend/testphase12.js`.
 
-## 🌱 Environmental & Economic Impact
+**Goal:** *"Resolve damaged PCB through the highest-value verified route."*
 
-Routing more devices toward reuse, resale, and repair — rather than defaulting everything to scrap or recycling — keeps functional devices and components in circulation longer, which reduces the volume of e-waste that needs processing and reduces demand for new raw materials. No specific impact figures (tonnes diverted, ₹ recovered, users served) are claimed here, since none have been measured yet at this stage of the project.
+**Evidence:** customer joined via `userRepository`; item classified `pcb`, confidence `83`; 6 candidate routes valued ₹0 (donate) to ₹12,000 (repair); all six pass constraints, but repair-component availability is `false`.
 
-## 🛠️ Technology Stack
+The decision policy runs on this evidence — and fails, then recovers. That full sequence is the centerpiece of this README:
 
-- **Frontend:** React, Vite, Tailwind CSS, PWA
-- **Backend:** Node.js / Python API services
-- **AI / ML:**
-  - MobileNetV3 Small — device/scrap image classification model
-  - ONNX Runtime — production inference engine (model exported to ONNX; not served via raw PyTorch)
-  - Image preprocessing pipeline for classifier input
-  - Confidence-scored, top-k prediction output
-  - Downstream price-prediction ML service for valuation
-- **Database & Cache:** PostgreSQL, Redis
-- **Planned integrations:** geolocation/routing APIs, escrow payment gateway *(roadmap)*
+## Failure → Replan: The Killer Scenario
 
-## 🚀 Deployment
+```text
+DECIDE     Repair selected — ₹12,000 expected value (highest among available routes)
+   ↓
+ACT        execute_resolution("repair") called
+   ↓
+RESULT     { success:false, errorCode:"REQUIRED_COMPONENT_UNAVAILABLE" }   ← real tool result, not a thrown exception
+   ↓
+OBSERVE    EXECUTING → OBSERVING (session does NOT go straight to FAILED)
+   ↓
+REPLAN     agentReplanService.replan() marks "repair" unavailable
+   ↓
+RE-DECIDE  The SAME decide() policy reruns on the updated route-availability view
+   ↓
+DECIDE     Parts selected — ₹1,599 expected value (next-highest available)
+   ↓
+ACT        execute_resolution("parts") mutates listing.sale_type → "parts"
+   ↓
+VERIFY     verify_resolution independently re-reads the listing, confirms sale_type === "parts"
+   ↓
+COMPLETED  decisionHistory: [repair, parts] · replanHistory: [repair excluded] · observations: [1 failure, 1 success]
+```
 
-- **Frontend:** Netlify
-- **Backend:** Render
-- **ML service:** Render
+> **There is no hardcoded "if repair fails, choose parts" branch.** The failed route is removed from the available action space, and the *same, unmodified* decision policy is re-run against the updated state. That's what makes "repair → parts" a genuine replan, not a scripted fallback — the [decision policy](#the-decision-policy) below has no route-specific logic to fall back through.
 
-*(Full deployment guide — environment variables, deploy order, and local verification steps — lives in `DEPLOYMENT.md`.)*
+Full timeline is inspectable via `GET /api/agent/timeline/:sessionId`. Three more deterministic scenarios exercise other PS5 requirements — see [Demo Scenarios](#demo-scenarios).
 
-## 🗺️ Implementation Roadmap
+---
 
-- **Phase 1 — Foundation & MVP:** AI image classification (MobileNetV3 Small / ONNX), multi-tier valuation logic, routing recommendation, and the web frontend for upload + assessment. **This is the current state of the project.**
-- **Phase 2 — Pilot & Validation:** connect routing recommendations to real collector pickups, add a resale/component listing surface, begin closing the loop between recommendation and an actual transaction.
-- **Phase 3 — Marketplace Depth:** spare-parts marketplace for repair shops, live auction engine for enterprise/bulk liquidation, onboarding SME clients.
-- **Phase 4 — Enterprise & Automation:** enterprise ITAD dashboard, chain-of-custody tracking, certified data-destruction records, automated CSR compliance reporting, commodity/component pricing API.
-- **Phase 5 — Scale:** expansion beyond the initial pilot geography.
+## Workflow vs Agent
 
-Phase 1 items are implemented; Phases 2–5 are planned direction, not current functionality.
+**Fixed workflow** — the next step is fixed by position in the script:
+```text
+A → B → C → D
+If C fails → stop / escalate
+```
 
-## 📊 Current Project Status
+**Punarchakra** — the next step is chosen from the state the previous step produced:
+```text
+A → B → C → D → observe result → update state → replan → execute alternative → verify → complete / escalate
+```
 
-ReValue is a working prototype: the AI classification pipeline and value-routing logic are implemented and deployed. The logistics, payments, and enterprise-facing layers described in earlier planning documents are not yet built and are listed above as roadmap items, not current features.
+The failed-execution path and the successful path lead to genuinely different runtime behavior, chosen dynamically — not two branches an author wrote out in advance. That's the actual content of "autonomous" here: **goal-directed control + state observation + dynamic action selection + verification + replanning**, not every stage being model-driven.
 
-## 👨‍💻 Developer
+---
 
-**Saksham Singh**
-AXIS COLLEGES KANPUR
+## The Decision Policy
+
+Conceptually, for each candidate route still marked available:
+
+```text
+Expected Value(route) = estimated outcome value − applicable costs/penalties
+```
+
+`agentDecisionService.decide()` picks the highest expected-value route that `check_constraints` has not marked unavailable. The important property for autonomy isn't the formula — it's that **the controller evaluates whatever routes are currently available, with no route name ever hardcoded into a fallback chain.** When `replan()` removes a route from availability, `decide()` runs unmodified against the smaller set — the same function that made the first decision makes the second one.
+
+---
+
+## Tool Architecture
+
+| Tool | Type | Purpose |
+|---|---|---|
+| `inspect_item` | READ | Classifies the device (ONNX/MobileNetV3), retrieves the customer |
+| `calculate_valuation` | READ | Expected value for all six candidate routes |
+| `check_constraints` | READ | Per-route eligibility, policy rules |
+| `execute_resolution` | **ACT** | Mutates `listing` / creates `Auction` / creates `Pickup` |
+| `verify_resolution` | **VERIFY** | Independent re-read confirming the mutation |
+
+All five are registered through a generic `agentToolRegistry` (a pure name→handler map, zero domain logic); an unregistered tool throws `NOT_FOUND` rather than fabricating a result. **Only `execute_resolution` crosses the mutation boundary** — enforced by the state machine itself, since `EXECUTING` is the only status allowed to call a mutating handler.
+
+---
+
+## Verification
+
+Tool-call success and resolution success are not the same claim:
+
+```text
+execute_resolution("parts") → { success: true }
+        ↓
+verify_resolution independently re-reads listingRepository.findById(itemId)
+        ↓
+Confirms: a resolution record exists · it matches the route just executed · listing.sale_type matches that route
+        ↓
+Only if ALL hold → session marked COMPLETED
+```
+
+This was **sabotage-tested**: `testphase12.js` Test E erases `listing.resolution` right after a successful execution, and `verify_resolution` still fails the check — proof that verification reads real state instead of trusting `execute_resolution`'s own return value.
+
+---
+
+## Escalation
+
+`HUMAN_REVIEW` is reached only when `check_constraints` raises a real review flag, or `decide()` / `replan()` genuinely find zero viable routes — including after the hard `MAX_RESOLUTION_ATTEMPTS = 3` cap (`agentConstants.js`). On escalation, `finalResolution` stays unset and the full `decisionHistory` / `replanHistory` / `observations` trail is preserved, so a human picks up with context rather than a dead end. Every failed route is remembered, so it's never silently re-selected.
+
+---
+
+## Full System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Frontend["Frontend — React + Vite"]
+        UI["AgentResolutionPage (/agent/:itemId)"]
+        Timeline["AgentTimeline / AgentStory / AgentOutcome"]
+    end
+
+    subgraph Backend["Backend — Node.js + Express"]
+        Orchestrator["agentOrchestrator (advanceSession)"]
+        State["agentStateService (state machine + event log)"]
+        Registry["agentToolRegistry"]
+        Tools["agentTools.js (5 handlers)"]
+        Decision["agentDecisionService"]
+        Replan["agentReplanService"]
+    end
+
+    subgraph Domain["Domain Repositories (in-memory)"]
+        Listing[(listingRepository)]
+        Auction[(auctionRepository)]
+        Pickup[(pickupRepository)]
+        User[(userRepository)]
+    end
+
+    subgraph ML["ML microservice — FastAPI + ONNX Runtime"]
+        Classifier["MobileNetV3 Small"]
+    end
+
+    UI --> Orchestrator
+    Timeline --> State
+    Orchestrator --> State
+    State --> Registry --> Tools
+    State --> Decision
+    State --> Replan
+    Tools --> Listing
+    Tools --> Auction
+    Tools --> Pickup
+    Tools --> User
+    Tools --> Classifier
+```
+
+```mermaid
+flowchart TD
+    A[Item submitted] --> B["IDLE → inspect_item"]
+    B --> C["EVALUATING → calculate_valuation"]
+    C --> D["CHECKING_CONSTRAINTS → check_constraints"]
+    D -->|review flags| H1[HUMAN_REVIEW]
+    D --> E["DECIDING → decide()"]
+    E -->|no viable route| H1
+    E --> F["EXECUTING → execute_resolution"]
+    F --> G["OBSERVING"]
+    G -->|failed| R["REPLANNING → replan()"]
+    G -->|succeeded| V["VERIFYING → verify_resolution"]
+    R -->|alternative found| E
+    R -->|nothing left / cap| H1
+    V -->|confirmed| DONE[COMPLETED]
+    V -->|mismatch| FAIL[FAILED]
+```
+
+Agent ↔ State ↔ Tools ↔ Verification is a closed loop: every stage reads and writes the same session object through `agentStateService`; no stage holds private state the others can't see.
+
+---
+
+## AI/ML Layer
+
+**Perception (probabilistic):** MobileNetV3 Small, ONNX Runtime, image preprocessing, device/scrap classification, confidence score.
+
+**Control (deterministic):** valuation, constraint evaluation, route availability, expected-value decision, execution, verification, replanning.
+
+This separation is deliberate — it avoids letting an opaque generative model directly mutate business state. The decision and replan policies are auditable expected-value logic, not a language model choosing actions; for a system that mutates real order/financial state, that trade — full inspectability over a black-box chain of thought — is a design choice, not a gap.
+
+---
+
+## Demo Scenarios
+
+The live app exposes the agent at **`/agent/:itemId`**; `AgentResolutionPage` repeatedly calls `advance()` and renders whatever the backend returns — the frontend computes nothing itself.
+
+| Scenario | Item | Demonstrates |
+|---|---|---|
+| `SCENARIO_NORMAL_REPAIR` | Dell Latitude 7490 | Clean happy path — decide → execute → verify → complete |
+| `SCENARIO_FAILURE_REPLAN` | Generic PCB | Full failure → replan → re-execute → verify loop ([above](#failure--replan-the-killer-scenario)) |
+| `SCENARIO_CONSTRAINT_SWITCH` | Samsung Galaxy S20 | A route blocked by policy *before* decision-time, never offered |
+| `SCENARIO_NO_VIABLE_ROUTE` | Swollen battery pack | Every route blocked → safe escalation, nothing fabricated |
+
+`demoEnvironmentService` has no `Math.random` and no timing dependency — every outcome is deterministic and reproducible on demand, verified by an explicit randomness-free check (`isDemoDataRandomFree`).
+
+**2-minute judge walkthrough:** Goal ("resolve this PCB") → Decision (repair) → Action (execute repair) → Intermediate result (component unavailable) → Adaptation (exclude route, re-decide) → Final outcome (parts, verified) → Audit trail (`AgentTimeline`, every transition/decision/observation/replan).
+
+---
+
+## Technical Stack
+
+React + Vite (frontend) · Node.js + Express, controller/service/repository layers (backend) · Python FastAPI + ONNX Runtime, MobileNetV3 Small (ML microservice) · in-memory array-based repositories (persistence)
+
+---
+
+## Implementation Scope & Limitations
+
+- Repair-component availability is a single signal scoped to seeded demo items — no general warehouse/SKU system exists.
+- Policy is rule-based (`check_constraints`), not RAG — no vector store or document corpus.
+- Decision/replan logic is deterministic expected-value logic, not LLM-driven, by design.
+- Persistence is in-memory; a backend restart loses session/timeline/domain state.
+- `repair` has no dedicated domain repository — it's a listing-status change, not a separate table.
+- `retrieveCustomer` returns a real `userRepository`-joined record for signed-up sellers, and an explicitly labelled fallback (`source: "seller_id_only_no_registered_user_record"`) for seed listings with no account — never an invented name.
+- The demo control surface isn't built for multiple judges driving concurrent sessions against the same in-memory state.
+- No `HUMAN_REVIEW → DECIDING` resume endpoint yet — an escalated session ends the loop rather than accepting a human decision back into the state machine.
+
+**Not claimed anywhere in this README:** production deployment at scale, real customers, revenue, accuracy/success-rate metrics, concurrent-user safety, or LLM-based reasoning in the decision/replan policies.
+
+---
+
+## Roadmap
+
+General enterprise inventory/SKU system · richer policy retrieval · multi-judge-safe concurrent sessions · `HUMAN_REVIEW → DECIDING` resume endpoint · dedicated `repair` domain model · production-grade persistence.
+
+---
+
+## Implementation Verification
+
+**Verified in code:** 5-tool registry + generic dispatch · state machine with `advanceSession()` as sole driver · deterministic, non-route-specific decision policy · real mutation on `execute_resolution` · sabotage-tested `verify_resolution` · observe→replan loop with `MAX_RESOLUTION_ATTEMPTS = 3` · real `userRepository` join with honest fallback · four deterministic demo scenarios · ONNX MobileNetV3 classifier.
+
+**Simulated/scoped:** repair-component inventory (demo-only) · rule-based policy (no RAG) · in-memory persistence.
+
+---
+
+## Developer / Team
+
+Saksham Singh 
+
+## Links
+
+- **GitHub:** https://github.com/sakshamcreates/punarchakra-iit-bhubhneshwar
+- demo link:** https://punarchakra.netlify.app/
