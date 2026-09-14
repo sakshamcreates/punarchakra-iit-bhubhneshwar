@@ -7,7 +7,7 @@ USER UPLOAD DEVICE → UNDERSTAND → DECIDE → ACT → VERIFY → REPLAN
 **Problem Statement 5 — Autonomous Customer Resolution Agent** · IIT Bhubaneswar Agentic AI Hackathon
 
 **GitHub:** https://github.com/sakshamcreates/punarchakra-iit-bhubhneshwar
-**Live Demo:** punarchakra.netlify.app
+**Live Demo:** #https://punarchakra.netlify.app
 
 ---
 
