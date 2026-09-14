@@ -375,4 +375,4 @@ Saksham Singh
 ## Links
 
 - **GitHub:** https://github.com/sakshamcreates/punarchakra-iit-bhubhneshwar
-- demo link:** https://punarchakra.netlify.app/
+- demo link:** #https://punarchakra.netlify.app/
